@@ -1,0 +1,22 @@
+#!/bin/bash
+
+PEER_PORT=2380
+CLIENT_PORT=4001
+
+etcdctl --endpoints http://172.18.0.11:$CLIENT_PORT member add etcd2 http://172.18.0.12:$PEER_PORT
+
+docker run \
+  -d \
+  -e ETCD_NAME=etcd2 \
+  -e ETCD_INITIAL_CLUSTER_TOKEN=etcd-cluster \
+  -e ETCD_ADVERTISE_CLIENT_URLS=http://172.18.0.12:$CLIENT_PORT \
+  -e ETCD_LISTEN_PEER_URLS=http://0.0.0.0:$PEER_PORT \
+  -e ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:$CLIENT_PORT \
+  -e ETCD_INITIAL_CLUSTER_STATE=existing \
+  -e ETCD_INITIAL_CLUSTER=etcd1=http://172.18.0.11:$PEER_PORT,etcd2=http://172.18.0.12:$PEER_PORT \
+  --name etcd2 \
+  --net etcdnet \
+  --ip 172.18.0.12 \
+  -v $(pwd)/etcd2.data:/etcd2.etcd:rw \
+  gcr.io/google_containers/etcd:3.0.3 \
+  /usr/local/bin/etcd
